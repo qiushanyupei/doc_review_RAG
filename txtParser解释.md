@@ -21,12 +21,14 @@ from rag.nlp import num_tokens_from_string
 
 class RAGFlowTxtParser:
     def __call__(self, fnm, binary=None, chunk_token_num=128, delimiter="\n!?;。；！？"):
+# 下面这个函数将二进制数据转化为字符串
         txt = get_text(fnm, binary)
         return self.parser_txt(txt, chunk_token_num, delimiter)
 
 # 下面这个是装饰器，表示是类方法
     @classmethod
     def parser_txt(cls, txt, chunk_token_num=128, delimiter="\n!?;。；！？"):
+# 如果txt变量不是字符串，报错
         if not isinstance(txt, str):
             raise TypeError("txt type should be str!")
         cks = [""]
@@ -42,14 +44,21 @@ class RAGFlowTxtParser:
             else:
                 cks[-1] += t
                 tk_nums[-1] += tnum
-
+# 下面这个列表是用来提取并转义 delimiter 中的所有分隔符，并将它们保存到 dels 中
         dels = []
         s = 0
+# m是finditer前两个参数匹配的结果，re.I表示忽略大小写
+# 实际上通过extend那一行代码把所有delimiter放入dels列表
+# 神秘地对于反引号内部的分割符进行提取处理
+# 也许是不允许反引号作为分隔符
         for m in re.finditer(r"`([^`]+)`", delimiter, re.I):
+# m.span()是匹配到的内容的左闭右开区间
             f, t = m.span()
+# m.group(1)只有捕获组有（finditer第一个参数有括号的）
             dels.append(m.group(1))
             dels.extend(list(delimiter[s: f]))
             s = t
+# 下一行也是很明显地让所有delimiter放入dels的补救措施
         if s < len(delimiter):
             dels.extend(list(delimiter[s:]))
         dels = [re.escape(d) for d in delimiter if d]
